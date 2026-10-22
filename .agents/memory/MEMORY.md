@@ -1,0 +1,1 @@
+- [Next.js Replit preview hosts](next-replit-preview.md) — allow the preview proxy hosts in Next.js development config so HMR works.
