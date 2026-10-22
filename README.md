@@ -12,3 +12,12 @@ npm run dev
 ```
 
 The development server listens on port 5000. To create a production build, run `npm run build`.
+
+## Checks
+
+```sh
+npm run build
+npm run test:e2e
+```
+
+The browser tests start the dev server if needed. Playwright uses the Chromium binary available in Replit; elsewhere, install it with `npx playwright install chromium`.
