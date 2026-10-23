@@ -41,7 +41,7 @@ jobs:
       - name: Create pull request
         uses: peter-evans/create-pull-request@v7
         with:
-          branch: fix/public-npm-lockfile
+          branch: fix/npm-lockfile-vercel
           delete-branch: true
           commit-message: Fix package URLs for Vercel
           title: Fix Replit package URLs for Vercel
