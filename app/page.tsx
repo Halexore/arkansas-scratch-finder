@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from "react";
-import { sampleGames, type ScratchGame } from "./data";
+import type { ScratchGame } from "./data";
 import { rankGames, type SortMode } from "./ranking";
 
 type PrizeFilter = "all" | "available" | "none";
@@ -111,7 +111,9 @@ function GameRow({
 }
 
 export default function Home() {
-  const [games, setGames] = useState(sampleGames);
+  const [games, setGames] = useState<ScratchGame[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [query, setQuery] = useState("");
   const [priceFilter, setPriceFilter] = useState("all");
   const [prizeFilter, setPrizeFilter] = useState<PrizeFilter>("all");
@@ -119,6 +121,38 @@ export default function Home() {
   const [photoOpen, setPhotoOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState("");
   const fileInput = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+  let cancelled = false;
+
+  async function loadGames() {
+    try {
+      const response = await fetch("/api/games");
+      if (!response.ok) {
+        throw new Error("Unable to load games.");
+      }
+
+      const result = await response.json();
+      if (!cancelled) {
+        setGames(result.games ?? []);
+        setLoadError("");
+      }
+    } catch {
+      if (!cancelled) {
+        setLoadError("Couldn't load games. Please try again.");
+      }
+    } finally {
+      if (!cancelled) {
+        setLoading(false);
+      }
+    }
+  }
+
+  loadGames();
+
+  return () => {
+    cancelled = true;
+  };
+}, []);
 
   useEffect(() => {
     if (!photoOpen) return;
