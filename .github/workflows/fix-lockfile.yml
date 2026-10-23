@@ -1,0 +1,49 @@
+
+name: Fix Replit package URLs
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  fix-lockfile:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Replace Replit package URLs
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const file = 'package-lock.json';
+          const oldPrefix = 'http://package-firewall.replit.internal/npm/';
+          const newPrefix = 'https://registry.npmjs.org/';
+          const original = fs.readFileSync(file, 'utf8');
+          const count = original.split(oldPrefix).length - 1;
+
+          if (count === 0) {
+            console.log('No Replit URLs found; no changes needed.');
+            process.exit(0);
+          }
+
+          const updated = original.split(oldPrefix).join(newPrefix);
+          JSON.parse(updated);
+          fs.writeFileSync(file, updated);
+
+          console.log(`Replaced ${count} Replit package URLs.`);
+          NODE
+
+      - name: Create pull request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: fix/public-npm-lockfile
+          delete-branch: true
+          commit-message: Fix package URLs for Vercel
+          title: Fix Replit package URLs for Vercel
+          body: Replace private Replit package download URLs with public npm registry URLs.
+          add-paths: package-lock.json
