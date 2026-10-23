@@ -1,0 +1,85 @@
+
+name: Test Arkansas Lottery Source
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-source:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check official game listing
+        run: |
+          node <<'NODE'
+          const url = 'https://www.myarkansaslottery.com/instant-games';
+
+          async function main() {
+            const response = await fetch(url, {
+              headers: {
+                'User-Agent': 'ArkansasScratchFinder/1.0',
+                'Accept': 'text/html'
+              },
+              signal: AbortSignal.timeout(20000)
+            });
+
+            console.log('Listing HTTP status:', response.status);
+
+            if (!response.ok) {
+              throw new Error(
+                'Official listing request failed with HTTP ' +
+                response.status
+              );
+            }
+
+            const html = await response.text();
+            const links = [
+              ...new Set(
+                [...html.matchAll(/href="([^"]*\/games\/[^"]+)"/g)]
+                  .map(match => match[1])
+                  .filter(href => !href.includes('?'))
+              )
+            ];
+
+            console.log('HTML bytes:', html.length);
+            console.log('Game links found:', links.length);
+            console.log('Example links:', links.slice(0, 5));
+
+            if (links.length === 0) {
+              throw new Error(
+                'The page loaded, but no game links were detected.'
+              );
+            }
+
+            const samplePath = links[0].startsWith('http')
+              ? links[0]
+              : new URL(links[0], url).href;
+
+            const detail = await fetch(samplePath, {
+              headers: {
+                'User-Agent': 'ArkansasScratchFinder/1.0',
+                'Accept': 'text/html'
+              },
+              signal: AbortSignal.timeout(20000)
+            });
+
+            console.log('Sample game page status:', detail.status);
+
+            if (!detail.ok) {
+              throw new Error('Could not fetch a sample game page.');
+            }
+
+            const detailHtml = await detail.text();
+            console.log(
+              'Contains prize table:',
+              /Prizes Remaining/i.test(detailHtml)
+            );
+          }
+
+          main().catch(error => {
+            console.error(error);
+            process.exitCode = 1;
+          });
+          NODE
