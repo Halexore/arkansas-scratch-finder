@@ -4,7 +4,9 @@ import { supabase } from "@/lib/supabase";
 export async function GET() {
   const { data, error } = await supabase
     .from("scratch_games")
-    .select("id, game_number, name, price, odds, play_style, total_top_prizes, remaining_top_prizes, source_url, last_verified_at")
+    .select(
+      "id, game_number, name, price, slot, odds, play_style, total_top_prizes, remaining_top_prizes, source_url, last_verified_at"
+    )
     .eq("active", true)
     .order("name");
 
@@ -16,5 +18,21 @@ export async function GET() {
     );
   }
 
-  return NextResponse.json({ games: data ?? [] });
+  const games = (data ?? []).map((game) => ({
+    id: game.id,
+    name: game.name,
+    price: Number(game.price),
+    slot: game.slot ?? 0,
+    remainingTopPrizes: game.remaining_top_prizes ?? 0,
+    totalTopPrizes: game.total_top_prizes ?? 0,
+    odds: game.odds ?? "Not available",
+    playStyle: game.play_style ?? "Not specified",
+    accent: "blue",
+    mark: game.name.slice(0, 2).toUpperCase(),
+    gameNumber: game.game_number,
+    sourceUrl: game.source_url,
+    lastVerifiedAt: game.last_verified_at
+  }));
+
+  return NextResponse.json({ games });
 }
